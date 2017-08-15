@@ -1,0 +1,26 @@
+---
+AWSTemplateFormatVersion: 2010-09-09
+Transform: AWS::Serverless-2016-10-31
+Parameters:
+  WebhookUrl:
+    Type: String
+    MinLength: 1
+
+Resources:
+  Topic:
+    Type: AWS::SNS::Topic
+
+  Function:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: index.handler
+      Runtime: python3.6
+      CodeUri: sns2slack
+      Environment:
+        Variables:
+          WEBHOOK_URL: !Ref WebhookUrl
+      Events:
+        SNS:
+          Type: SNS
+          Properties:
+            Topic: !Ref Topic
