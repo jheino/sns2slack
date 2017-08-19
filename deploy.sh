@@ -2,7 +2,8 @@
 
 aws cloudformation package \
 	--template-file sns2slack.yaml \
-	--s3-bucket jheino-lambda > sns2slack-output.yaml
+	--s3-bucket jheino-lambda \
+	--output-template-file sns2slack-output.yaml
 
 aws cloudformation deploy \
 	--template-file sns2slack-output.yaml \
