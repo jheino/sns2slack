@@ -66,7 +66,7 @@ def format_message(event):
         for key, value in message.items():
             attachment['fields'].append({
                 'title': key,
-                'value': str(format_value(value)),
+                'value': format_value(value),
             })
     except json.decoder.JSONDecodeError:
         attachment['text'] = event['Records'][0]['Sns']['Message']
