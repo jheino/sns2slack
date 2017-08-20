@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import collections
 import datetime
 import http.client
 import json
@@ -28,16 +29,45 @@ def parse_timestamp(timestamp):
         '%Y-%m-%dT%H:%M:%S.%fZ'
     ).replace(tzinfo=datetime.timezone.utc)
 
+def format_value(value, prefix=''):
+    result = ''
+    if isinstance(value, dict):
+        for k, v in value.items():
+            result += format_value(v, prefix + '.' + k if prefix else k)
+    elif isinstance(value, list):
+        for k, v in enumerate(value):
+            result += format_value(v, prefix + '[{}]'.format(k) if prefix else '[{}]'.format(k))
+    else:
+        if prefix:
+            result = '{}: {}\n'.format(prefix, value)
+        else:
+            result = value
+    return result
+
 def format_message(event):
     attachment = {}
     attachment['title'] = event['Records'][0]['Sns']['Subject']
     attachment['ts'] = parse_timestamp(event['Records'][0]['Sns']['Timestamp']).timestamp()
 
     try:
-        message = json.loads(event['Records'][0]['Sns']['Message'])
-        if message.get('NewStateValue') == 'ALARM':
-            attachment['color'] = 'danger'
-        attachment['text'] = json.dumps(message, indent=True)
+        message = json.loads(
+            event['Records'][0]['Sns']['Message'],
+            object_pairs_hook=collections.OrderedDict
+        )
+
+        if 'AlarmName' in message:
+            if message['NewStateValue'] == 'ALARM':
+                attachment['color'] = 'danger'
+            elif message['NewStateValue'] == 'OK':
+                attachment['color'] = 'good'
+
+        attachment['fields'] = []
+
+        for key, value in message.items():
+            attachment['fields'].append({
+                'title': key,
+                'value': str(format_value(value)),
+            })
     except json.decoder.JSONDecodeError:
         attachment['text'] = event['Records'][0]['Sns']['Message']
 
